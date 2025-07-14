@@ -16,4 +16,6 @@ CONFIGURE_ARGS=	--with-shared-memory-dir=/tmp
 INSTALL_TARGET=	install-strip
 TEST_TARGET=	check
 
+USES += autoreconf
+
 .include <bsd.port.mk>

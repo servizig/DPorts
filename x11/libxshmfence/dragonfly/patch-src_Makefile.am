@@ -1,0 +1,11 @@
+--- src/Makefile.am.orig	2025-07-14 11:43:08 UTC
++++ src/Makefile.am
+@@ -1,7 +1,7 @@
+ lib_LTLIBRARIES = libxshmfence.la
+ 
+ if PTHREAD
+-PTHREAD_SOURCES=xshmfence_pthread.c xshmfence_pthread.h
++PTHREAD_SOURCES=xshmfence_umtx.c xshmfence_umtx.h
+ endif
+ 
+ if FUTEX
