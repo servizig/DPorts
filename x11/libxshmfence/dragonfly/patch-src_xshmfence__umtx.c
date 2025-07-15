@@ -1,4 +1,4 @@
---- src/xshmfence_umtx.c.orig	2025-07-14 12:20:37 UTC
+--- src/xshmfence_umtx.c.orig	2025-07-14 12:22:29 UTC
 +++ src/xshmfence_umtx.c
 @@ -0,0 +1,61 @@
 +#if HAVE_CONFIG_H
@@ -43,7 +43,7 @@
 +{
 +	while (__sync_val_compare_and_swap(&f->v, 0, -1) != 1) {
 +		if (umtx_sleep(&f->v, -1, 0)) {
-+			if (errno != EWOULDBLOCK)
++			if (errno != EINVAL)
 +				return -1;
 +		}
 +	}
