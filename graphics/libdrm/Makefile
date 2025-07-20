@@ -37,6 +37,7 @@ MESON_ARGS+=	-Domap=disabled \
 		-Dnouveau=disabled
 
 MESON_ARGS+=	-Dman-pages=enabled
+MESON_ARGS+=    -Dtests=true
 
 .include <bsd.port.options.mk>
 

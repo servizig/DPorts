@@ -1,42 +1,53 @@
-# Created by: gahr
-
 PORTNAME=	libosmesa
 PORTVERSION=	${MESAVERSION}
 CATEGORIES=	graphics
 
 COMMENT=	Off-Screen Mesa implementation of the OpenGL API
+WWW=		https://www.mesa3d.org/
 
-USES=		xorg
+LICENSE=	MIT
+LICENSE_FILE=	${WRKSRC}/docs/license.rst
+
+LIB_DEPENDS+=	libglapi.so:graphics/mesa-libs
+
+USES=		llvm:lib,noexport xorg
 USE_XORG=	xorgproto
+USE_LDCONFIG=	yes
 
 .include <bsd.port.options.mk>
 .include "${.CURDIR:H:H}/graphics/mesa-dri/Makefile.common"
 
 # Disable some options
-MESON_ARGS+=	-Ddri-drivers="" \
-		-Dgallium-drivers="swrast" \
+MESON_ARGS+=	-Dgallium-drivers="swrast" \
 		-Dvulkan-drivers="" \
 		-Dplatforms="" \
+		-Dandroid-libbacktrace=disabled \
 		-Dgallium-vdpau=disabled \
 		-Dgallium-omx=disabled \
 		-Dgallium-va=disabled \
 		-Dgallium-opencl=disabled \
 		-Dgallium-xa=disabled \
-		-Dgallium-xvmc=disabled \
 		-Dgallium-nine=false \
 		-Dgles1=disabled \
 		-Dgles2=disabled \
-		-Dopengl=false \
+		-Dglvnd=disabled \
+		-Dlmsensors=disabled \
+		-Dmicrosoft-clc=disabled \
+		-Dopengl=true \
 		-Dglx=disabled \
 		-Degl=disabled \
 		-Dgbm=disabled \
 		-Dtools="" \
+		-Dvalgrind=disabled \
+		-Dxlib-lease=disabled \
 		-Dzstd=disabled
 LDFLAGS_i386=		-Wl,-znotext
 
 MESON_ARGS+=	-Dosmesa=true
 
-.include "${MASTERDIR}/Makefile.targets"
+.if ${ARCH} != amd64
+MESON_ARGS+=	-Dintel-rt=disabled # https://gitlab.freedesktop.org/mesa/mesa/-/issues/10629
+.endif
 
 post-install:
 	@${MKDIR} ${STAGEDIR}${PREFIX}/include/GL

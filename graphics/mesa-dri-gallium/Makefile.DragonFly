@@ -43,7 +43,7 @@ dfly-patch:
 
 # move everything to a special dir, overlay install handled by pkg-install script
 dfly-install:
-.if defined(DEVELOPER)
+.if defined(DEVELOPER22)
 	${MD5} -r ${STAGEDIR}/${LOCALBASE}/include/EGL/*
 	${MD5} -r ${LOCALBASE}/include/EGL/*
 	${MD5} -r ${STAGEDIR}/${LOCALBASE}/include/GL/*

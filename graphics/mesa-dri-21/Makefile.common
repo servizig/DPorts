@@ -1,0 +1,126 @@
+# Makefile.common - shared code between MesaLib ports.
+#
+# !!! Here be dragons !!! (they seem to be everywhere these days)
+#
+# Remember to upgrade the following ports everytime you bump MESAVERSION:
+#
+#    - graphics/libosmesa
+#    - graphics/mesa-dri
+#    - graphics/mesa-libs
+#    - lang/clover
+
+MESAVERSION=	${MESABASEVERSION}${MESASUBVERSION:C/^(.)/.\1/}
+MESADISTVERSION=${MESABASEVERSION}${MESASUBVERSION:C/^(.)/-\1/}
+
+MESABASEVERSION=	21.3.9
+# if there is a subversion, don't include the '-' between 7.11-rc2.
+MESASUBVERSION=
+
+MASTER_SITES=	https://mesa.freedesktop.org/archive/ \
+		https://mesa.freedesktop.org/archive/${MESABASEVERSION}/ \
+		ftp://ftp.freedesktop.org/pub/mesa/ \
+		ftp://ftp.freedesktop.org/pub/mesa/${MESABASEVERSION}/
+
+DISTFILES=	mesa-${MESADISTVERSION}${EXTRACT_SUFX}
+
+MAINTAINER=	x11@FreeBSD.org
+
+LICENSE=	MIT
+LICENSE_FILE=	${WRKSRC}/docs/license.rst
+
+COMPONENT=	${PORTNAME:tl:C/^lib//:C/mesa-//}
+
+BUILD_DEPENDS+=	${PYTHON_PKGNAMEPREFIX}mako>0:textproc/py-mako@${PY_FLAVOR}
+LIB_DEPENDS+=	libexpat.so:textproc/expat2
+.if ${COMPONENT} != clover
+.if ${PORT_OPTIONS:MPLATFORM_X11}
+USES+=	xorg
+.endif
+.endif
+.if ${COMPONENT} != osmesa && ${COMPONENT} != osmesa-gallium
+LIB_DEPENDS+=	libdrm.so:graphics/libdrm
+.endif
+.if ${COMPONENT} != libs
+LIB_DEPENDS+=	libglapi.so:graphics/mesa-libs
+.endif
+.if ${ARCH} == aarch64 || ${ARCH} == x86_64 || ${ARCH} == armv7 || ${ARCH} == i386 || ${ARCH} == powerpc64 || ${ARCH} == powerpc64le
+LIB_DEPENDS+=	libunwind.so:devel/libunwind
+.endif
+.if ${OPSYS} == DragonFly
+.endif
+
+USES+=		compiler:c++11-lib bison meson pathfix pkgconfig \
+		python:3.6+,build shebangfix tar:xz
+
+# all ports whine on WARNING: Gettext not found, all translation targets will be ignored.
+USES+=		gettext-tools
+
+USE_LDCONFIG=	yes
+
+.if exists(/usr/bin/ld.lld) && ${/usr/bin/ld:L:tA} != /usr/bin/ld.lld
+# --build-id isn't supported by old GNU ld.bfd in base
+# Also ld.bfd have problems that seems related to --as-needed
+USE_BINUTILS=		yes
+LDFLAGS+=		-B${LOCALBASE}/bin
+.endif
+
+# only have one port to check with portscout.
+.if ${PORTNAME} != mesa-dri
+PORTSCOUT=	ignore:1
+.endif
+
+python_OLD_CMD=	/usr/bin/env[[:space:]]python2 /usr/bin/python2 /bin/env[[:space:]]python
+SHEBANG_FILES=	src/gallium/*/*/*.py src/gallium/tools/trace/*.py \
+		src/gallium/drivers/svga/svgadump/svga_dump.py \
+		src/mapi/glapi/gen/*.py src/mapi/mapi_abi.py \
+		src/mesa/main/get_*.py src/util/format_srgb.py \
+		src/amd/*/*.py src/intel/genxml/gen_pack_header.py
+
+MASTERDIR=	${.CURDIR:H:H}/graphics/mesa-dri
+PATCHDIR=	${MASTERDIR}/files
+WRKSRC=		${WRKDIR}/mesa-${MESADISTVERSION}
+DESCR=		${.CURDIR}/pkg-descr
+PLIST=		${.CURDIR}/pkg-plist
+PKGHELP=	${.CURDIR}/pkg-help
+PKGINSTALL=	${.CURDIR}/pkg-install
+PKGDEINSTALL=	${.CURDIR}/pkg-deinstall
+
+.include <bsd.port.pre.mk>
+
+BINARY_ALIAS+=	python3=${PYTHON_VERSION}
+
+LLVM_VERSION=	13
+.if ${OPSYS} != DragonFly
+BUILD_DEPENDS+=	llvm-config${LLVM_DEFAULT}:devel/llvm${LLVM_DEFAULT}
+.if ${COMPONENT} != libs
+RUN_DEPENDS+=	llvm-config${LLVM_DEFAULT}:devel/llvm${LLVM_DEFAULT}
+.endif
+.endif
+
+.  if 0
+# see .if 1 down
+MESON_ARGS+=	--native-file="${WRKSRC}/llvm.ini"
+LDFLAGS+=	-Wl,-rpath=${LOCALBASE}/llvm${LLVM_DEFAULT}/lib
+.  endif
+MESON_ARGS+=	-Dllvm=enabled
+
+# On DragonFly llvm is only present in mesa-dri-gallium mesa-osmesa-gallium ports
+# to reduce overhead of having llvm/clang huge dependency for no good reason
+.if ${OPSYS} == DragonFly
+# XXX disable dri3 until ftigeot figure it out
+MESON_ARGS+=	-Ddri3=enabled
+. if ${COMPONENT} == libs || ${COMPONENT} == dri || ${COMPONENT} == osmesa
+MESON_ARGS+=	-Dllvm=disabled
+. else
+LIB_DEPENDS+=	libelf.so:devel/libelf
+.  if 1
+# zrj small and mean
+BINARY_ALIAS+=	llvm-config=llvm-config-mesa
+BUILD_DEPENDS+=	llvm-mesa>0:graphics/llvm-mesa
+LIB_DEPENDS+=	libLLVM-mesa-13.so:graphics/llvm-libs-mesa
+.  else
+BUILD_DEPENDS+=	llvm${LLVM_DEFAULT}>=0:devel/llvm${LLVM_DEFAULT}
+RUN_DEPENDS+=	llvm${LLVM_DEFAULT}>=0:devel/llvm${LLVM_DEFAULT}
+.  endif
+. endif
+.endif
