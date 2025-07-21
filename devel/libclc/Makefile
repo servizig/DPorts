@@ -1,8 +1,10 @@
 PORTNAME=	libclc
-DISTVERSION=	15.0.4
+DISTVERSION=	${DISTVERSION_${FLAVOR}}
+DISTVERSION_llvm15=	15.0.4
 CATEGORIES=	devel
 MASTER_SITES=	https://github.com/llvm/llvm-project/releases/download/llvmorg-${DISTVERSION:S/rc/-rc/}/
 DISTNAME=	libclc-${DISTVERSION}.src
+PKGNAMESUFFIX=	-${FLAVOR}
 
 MAINTAINER=	x11@FreeBSD.org
 COMMENT=	Required library functions for OpenCL C programming language
@@ -16,6 +18,8 @@ LICENSE_PERMS=	dist-mirror dist-sell pkg-mirror pkg-sell auto-accept
 BUILD_DEPENDS=	llvm15>=15.0:devel/llvm15 \
 		spirv-llvm-translator-llvm15>0:devel/spirv-llvm-translator@llvm15 \
 		libedit>=0:devel/libedit
+
+FLAVORS=	${15:L:S/^/llvm/}
 
 USES=		cmake compiler:c++11-lib python:build tar:xz
 USE_LDCONFIG=	yes
