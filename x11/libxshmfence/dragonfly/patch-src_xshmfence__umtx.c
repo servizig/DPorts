@@ -43,7 +43,7 @@
 +{
 +	while (__sync_val_compare_and_swap(&f->v, 0, -1) != 1) {
 +		if (umtx_sleep(&f->v, -1, 0)) {
-+			if (errno != EINVAL)
++			if (errno == EINVAL)
 +				return -1;
 +		}
 +	}
